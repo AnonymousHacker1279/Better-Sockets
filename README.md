@@ -42,6 +42,13 @@ SimpleSockets.addPacketToQueue("str", "Hello! This packet was queued!", 16)
 SimpleSockets.sendQueuedPackets(connection)
 ```
 
+Queued packets have the ability to be prioritized. This means you can add an important packet later in the queue, and it'll be sent earlier.
+```python
+SimpleSockets.addPacketToQueue("str", "This is an important packet!", 36, SimpleSockets.QueuePriorities.HIGHEST)
+SimpleSockets.addPacketToQueue("int", 69420, 8, SimpleSockets.QueuePriorities.HIGH)
+```
+Queue priorities can be "LOWEST", "LOW", "NORMAL", "HIGH", or "HIGHEST". If you don't specify a priority it defaults to "NORMAL".
+
 There are built in packet types for integers, booleans, and strings. An incoming packet looks like this: ``(3, 'int', b'1234')``.  
 - The first item in the tuple is the channel number.
 - The second item in the tuple is the data type (can be 'int', 'bool', or 'string')
