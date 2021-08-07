@@ -1,14 +1,33 @@
 import socket
 import BetterSockets
 import threading
+import time
 
-betterSockets = BetterSockets
-betterSockets.initializeClient(443)
-betterSockets.setDestination("192.168.1.9", 443)
-connectionThread = threading.Thread(target=betterSockets.startIncomingConnection)
-connectionThread.start()
+# Set the logger state: Defaults to disabled.
+BetterSockets.setLoggerState(True)
+
+# Initialize the client by specifying the port packets will be sent from.
+BetterSockets.initializeClient(443)
+
+# Set the destination address.
 ADDR = ("192.168.1.9", 443)
-socketHandler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-socketHandler.connect(ADDR)
-connectionThread.join()
-betterSockets.sendPacketInt(socketHandler, 9999)
+BetterSockets.setDestination(ADDR)
+
+# Start an incoming connection: This MUST be threaded!
+BetterSockets.threadIncomingConnection()
+
+# Connect to the destination address, and save our connection information
+connection = BetterSockets.connectClient(ADDR)
+
+# Send packets with varying data types
+time.sleep(0.1)
+BetterSockets.sendPacketInt(connection, 9999)
+time.sleep(0.1)
+BetterSockets.sendPacketBool(connection, True)
+time.sleep(0.1)
+BetterSockets.sendPacketStr(connection, "Hello World!")
+time.sleep(0.1)
+
+# Disconnect the client
+time.sleep(0.1)
+BetterSockets.disconnectClient(connection)

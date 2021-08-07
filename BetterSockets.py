@@ -4,8 +4,7 @@ import Logger
 
 # Define Variables
 connections = []
-destinationIP = None
-destinationPort = None
+destinationAddress = None
 hostIP = socket.gethostbyname(socket.gethostname())
 hostPort = None
 packetEncoding = "UTF-8"
@@ -20,11 +19,9 @@ def initializeClient(port: int):
 	startSocket()
 	
 # Set the destination IP/hostname and port.
-def setDestination(ip: str, port: int):
-	global destinationIP
-	global destinationPort
-	destinationIP = ip
-	destinationPort = port
+def setDestination(addr):
+	global destinationAddress
+	destinationAddress = addr
 
 def setEncoding(encoding: str):
 	global packetEncoding
@@ -55,10 +52,18 @@ def startIncomingConnection():
 		clientConnection = conn
 		connections.append(addr[0])
 		threading.Thread(target=handleClient, args=(conn,)).start()
-		Logger.log("New connection from: " + str({connection}) + "\n")
+		Logger.log("New connection from: " + str({connection}))
 		
 	except Exception as Error:
 		Logger.logError("Error occurred while starting the connection handler: " + str(Error))
+
+def connectClient(addr):
+	socketHandler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	socketHandler.connect(addr)
+	return socketHandler
+
+def threadIncomingConnection():
+	threading.Thread(target=startIncomingConnection).start()
 
 def getBuffer(data):
 	global packetEncoding
@@ -70,10 +75,9 @@ def getBuffer(data):
 	return data
 
 def checkConnected():
-	global destinationPort
-	global destinationIP
+	global destinationAddress
 	global connections
-	if destinationIP in connections:
+	if destinationAddress[0] in connections:
 		return True
 	else:
 		return False
@@ -81,13 +85,19 @@ def checkConnected():
 def handleClient(Connection):
 	while True:
 		global packetEncoding
-		bufferLen = Connection.recv(64).decode(packetEncoding)
+		bufferLen = len(Connection.recv(64).decode(packetEncoding))
 		if bufferLen:
-			data = Connection.recv(int(bufferLen)).decode(packetEncoding)
-			print("Data:",data)
+			data = Connection.recv(int(bufferLen))
+			# Convert received string back to a tuple
+			convertedData = eval(data)
+			Logger.logDebug("Received Data (type " + str(convertedData[0]) + "): " + str(convertedData[1].decode(packetEncoding)))
 
 def disconnectClient(connection):
-	connection.close()
+	try:
+		Logger.log("Disconnecting client...")
+		connection.close()
+	except Exception as Error:
+		Logger.log("Failed to disconnect client: " + str(Error))
 
 def addPacketToQueue(data):
 	global packetQueue
@@ -109,24 +119,59 @@ def sendQueuedPackets():
 # Send a packet to the destination server containing an integer.
 def sendPacketInt(server, data: int):
 	global socketHandler
-	global destinationIP
-	global destinationPort
+	global destinationAddress
 	global clientConnection
 
 	try:
 		Logger.log("Sending packet with a data type of integer...")
-		if destinationPort == None:
-			Logger.logError("No destination port specified.")
-			raise ValueError
-		if destinationIP == None:
-			Logger.logError("No destination IP/hostname specified.")
+		if destinationAddress == None:
+			Logger.logError("No destination host/port specified.")
 			raise ValueError
 		if not checkConnected():
 			Logger.logError("Not connected to a socket.")
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(encodedData)
-		# socketHandler.send(bytes(("length", length), ("type", "int"), ("data", encodedData)))
+		server.send(bytearray(str(("int", encodedData)), 'utf-8'))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of integer). " + str(Error))
+
+# Send a packet to the destination server containing a boolean.
+def sendPacketBool(server, data: bool):
+	global socketHandler
+	global destinationAddress
+	global clientConnection
+
+	try:
+		Logger.log("Sending packet with a data type of boolean...")
+		if destinationAddress == None:
+			Logger.logError("No destination host/port specified.")
+			raise ValueError
+		if not checkConnected():
+			Logger.logError("Not connected to a socket.")
+			raise ValueError
+		length, encodedData = getBuffer(data)
+		server.send(length)
+		server.send(bytearray(str(("bool", encodedData)), 'utf-8'))
+	except Exception as Error:
+		Logger.logError("Sending packet failed (data type of boolean). " + str(Error))
+
+# Send a packet to the destination server containing a string.
+def sendPacketStr(server, data: str):
+	global socketHandler
+	global destinationAddress
+	global clientConnection
+
+	try:
+		Logger.log("Sending packet with a data type of string...")
+		if destinationAddress == None:
+			Logger.logError("No destination host/port specified.")
+			raise ValueError
+		if not checkConnected():
+			Logger.logError("Not connected to a socket.")
+			raise ValueError
+		length, encodedData = getBuffer(data)
+		server.send(length)
+		server.send(bytearray(str(("str", encodedData)), 'utf-8'))
+	except Exception as Error:
+		Logger.logError("Sending packet failed (data type of string). " + str(Error))
