@@ -38,8 +38,10 @@ time.sleep(0.0000000000000000000000001)
 
 # Add packets to a queue
 SimpleSockets.addPacketToQueue("int", 1234)
-SimpleSockets.addPacketToQueue("bool", False, 5)
+SimpleSockets.addPacketToQueue("bool", False, 5, SimpleSockets.QueuePriorities.LOWEST)
 SimpleSockets.addPacketToQueue("str", "Hello! This packet was queued!", 16)
+SimpleSockets.addPacketToQueue("str", "This is an important packet!", 36, SimpleSockets.QueuePriorities.HIGHEST)
+SimpleSockets.addPacketToQueue("int", 69420, 8, SimpleSockets.QueuePriorities.HIGH)
 
 # Send some packets on different channels
 SimpleSockets.sendPacketInt(connection, 1234, 3)

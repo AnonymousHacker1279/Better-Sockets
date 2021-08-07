@@ -1,8 +1,8 @@
-import io
 import socket
 import threading
 import Logger
 import time
+from enum import Enum
 
 # Define Variables
 connections = []
@@ -48,6 +48,13 @@ def startSocket():
 		
 	except Exception as Error:
 		Logger.logError("An exception occurred while starting the socket: " + str(Error))
+
+class QueuePriorities():
+	LOWEST = -2
+	LOW = -1
+	NORMAL = 0
+	HIGH = 1
+	HIGHEST = 2
 
 # Start an incoming connection. This MUST be threaded!
 def startIncomingConnection():
@@ -125,12 +132,12 @@ def disconnectClient(connection):
 		Logger.log("Failed to disconnect client: " + str(Error))
 
 # Add a packet to the queue.
-def addPacketToQueue(type: str, data, channel = 0):
+def addPacketToQueue(type: str, data, channel = 0, priority = QueuePriorities.NORMAL):
 	global packetQueue
 	try:
 		Logger.log("Adding new packet to queue.")
 		length, encodedData = getBuffer(data)
-		packetQueue.append((length, channel, type, encodedData))
+		packetQueue.append((length, channel, type, encodedData, priority))
 	except Exception as Error:
 		Logger.logError("Failed to add new packet to queue. " + str(Error))
 
@@ -138,13 +145,42 @@ def addPacketToQueue(type: str, data, channel = 0):
 def sendQueuedPackets(server):
 	global packetQueue
 	iteration = 0
+	sortedQueue = []
 	Logger.log("Sending queued packets...")
+
 	for _ in packetQueue:
-		length = packetQueue[iteration][0]
-		encodedData = packetQueue[iteration][3]
-		Logger.log("Sending queued packet with type of '" + packetQueue[iteration][2] + "'")
+		if packetQueue[iteration][4] == 2:
+			sortedQueue.append(packetQueue[iteration])
+		iteration = iteration + 1
+	iteration = 0
+	for _ in packetQueue:
+		if packetQueue[iteration][4] == 1:
+			sortedQueue.append(packetQueue[iteration])
+		iteration = iteration + 1
+	iteration = 0
+	for _ in packetQueue:
+		if packetQueue[iteration][4] == 0:
+			sortedQueue.append(packetQueue[iteration])
+		iteration = iteration + 1
+	iteration = 0
+	for _ in packetQueue:
+		if packetQueue[iteration][4] == -1:
+			sortedQueue.append(packetQueue[iteration])
+		iteration = iteration + 1
+	iteration = 0
+	for _ in packetQueue:
+		if packetQueue[iteration][4] == -2:
+			sortedQueue.append(packetQueue[iteration])
+		iteration = iteration + 1
+
+	iteration = 0
+	
+	for _ in sortedQueue:
+		length = sortedQueue[iteration][0]
+		encodedData = sortedQueue[iteration][3]
+		Logger.log("Sending queued packet with type of '" + sortedQueue[iteration][2] + "'")
 		server.send(length)
-		server.send(bytearray(str((packetQueue[iteration][1], packetQueue[iteration][2], encodedData)), getEncoding()))
+		server.send(bytearray(str((sortedQueue[iteration][1], sortedQueue[iteration][2], encodedData)), getEncoding()))
 		iteration = iteration + 1
 		# Add a slight delay so the packets arrive in order
 		time.sleep(0.0000000000000000000000001)
