@@ -1,49 +1,49 @@
-import BetterSockets
+import SimpleSockets
 import time
 import Logger
 
 # Set the logger state: Defaults to disabled.
-BetterSockets.setLoggerState(True)
+SimpleSockets.setLoggerState(True)
 
 # Initialize the client by specifying the port packets will be sent from.
-BetterSockets.initializeClient(1234)
+SimpleSockets.initializeClient(1234)
 
 # Set the destination address.
 ADDR = ("192.168.1.9", 1234)
-BetterSockets.setDestination(ADDR)
+SimpleSockets.setDestination(ADDR)
 
 # Start an incoming connection: This MUST be threaded!
-BetterSockets.threadIncomingConnection()
+SimpleSockets.threadIncomingConnection()
 
 # Connect to the destination address, and save our connection information
-connection = BetterSockets.connectClient(ADDR)
+connection = SimpleSockets.connectClient(ADDR)
 
 # Implement our own behavior for receiving data
 # Also known as "monkey patching"
 def handleData(data):
 	# Only log items on channel 3
 	if data[0] == 3:
-		Logger.log("Received data (type " + str(data[1]) + "): " + str(data[2].decode(BetterSockets.getEncoding())))
+		Logger.log("Received data (type " + str(data[1]) + "): " + str(data[2].decode(SimpleSockets.getEncoding())))
 
-# BetterSockets.handleReceivedData = handleData
+# SimpleSockets.handleReceivedData = handleData
 
 # Send packets with varying data types
 time.sleep(0.1)
-BetterSockets.sendPacketInt(connection, 9999)
+SimpleSockets.sendPacketInt(connection, 9999)
 time.sleep(0.1)
-BetterSockets.sendPacketBool(connection, True)
+SimpleSockets.sendPacketBool(connection, True)
 time.sleep(0.1)
-BetterSockets.sendPacketStr(connection, "Hello World!")
+SimpleSockets.sendPacketStr(connection, "Hello World!")
 time.sleep(0.1)
 
 # Send some packets on different channels
-BetterSockets.sendPacketInt(connection, 1234, 3)
+SimpleSockets.sendPacketInt(connection, 1234, 3)
 time.sleep(0.1)
-BetterSockets.sendPacketBool(connection, False, 15)
+SimpleSockets.sendPacketBool(connection, False, 15)
 time.sleep(0.1)
-BetterSockets.sendPacketStr(connection, "Hello World! I'm on channel 32!", 32)
+SimpleSockets.sendPacketStr(connection, "Hello World! I'm on channel 32!", 32)
 time.sleep(0.1)
 
 # Disconnect the client
 time.sleep(0.1)
-BetterSockets.disconnectClient(connection)
+SimpleSockets.disconnectClient(connection)
