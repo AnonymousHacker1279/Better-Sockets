@@ -2,7 +2,6 @@ import socket
 import threading
 import Logger
 import time
-from enum import Enum
 
 # Define Variables
 connections = []
