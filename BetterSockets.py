@@ -86,6 +86,9 @@ def handleClient(Connection):
 			data = Connection.recv(int(bufferLen)).decode(packetEncoding)
 			print("Data:",data)
 
+def disconnectClient(connection):
+	connection.close()
+
 def addPacketToQueue(data):
 	global packetQueue
 	try:
