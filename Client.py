@@ -28,6 +28,14 @@ time.sleep(0.1)
 BetterSockets.sendPacketStr(connection, "Hello World!")
 time.sleep(0.1)
 
+# Send some packets on different channels
+BetterSockets.sendPacketInt(connection, 1234, 3)
+time.sleep(0.1)
+BetterSockets.sendPacketBool(connection, False, 15)
+time.sleep(0.1)
+BetterSockets.sendPacketStr(connection, "Hello World! I'm on channel 32!", 32)
+time.sleep(0.1)
+
 # Disconnect the client
 time.sleep(0.1)
 BetterSockets.disconnectClient(connection)

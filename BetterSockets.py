@@ -90,7 +90,7 @@ def handleClient(Connection):
 			data = Connection.recv(int(bufferLen))
 			# Convert received string back to a tuple
 			convertedData = eval(data)
-			Logger.logDebug("Received Data (type " + str(convertedData[0]) + "): " + str(convertedData[1].decode(packetEncoding)))
+			Logger.logDebug("Received data on channel " + str(convertedData[0]) + " (type " + str(convertedData[1]) + "): " + str(convertedData[2].decode(packetEncoding)))
 
 def disconnectClient(connection):
 	try:
@@ -117,7 +117,7 @@ def sendQueuedPackets():
 		socketHandler.send(encodedData)
 
 # Send a packet to the destination server containing an integer.
-def sendPacketInt(server, data: int):
+def sendPacketInt(server, data: int, channel = 0):
 	global socketHandler
 	global destinationAddress
 	global clientConnection
@@ -132,12 +132,12 @@ def sendPacketInt(server, data: int):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str(("int", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "int", encodedData)), 'utf-8'))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of integer). " + str(Error))
 
 # Send a packet to the destination server containing a boolean.
-def sendPacketBool(server, data: bool):
+def sendPacketBool(server, data: bool, channel = 0):
 	global socketHandler
 	global destinationAddress
 	global clientConnection
@@ -152,12 +152,12 @@ def sendPacketBool(server, data: bool):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str(("bool", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "bool", encodedData)), 'utf-8'))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of boolean). " + str(Error))
 
 # Send a packet to the destination server containing a string.
-def sendPacketStr(server, data: str):
+def sendPacketStr(server, data: str, channel = 0):
 	global socketHandler
 	global destinationAddress
 	global clientConnection
@@ -172,6 +172,6 @@ def sendPacketStr(server, data: str):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str(("str", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "str", encodedData)), 'utf-8'))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of string). " + str(Error))
