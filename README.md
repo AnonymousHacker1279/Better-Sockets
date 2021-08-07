@@ -34,6 +34,14 @@ SimpleSockets.sendPacketBool(connection, True)
 SimpleSockets.sendPacketStr(connection, "Hello World!")
 ```
 
+Alternatively, you can queue your packets and send them all at once.
+```python
+SimpleSockets.addPacketToQueue("int", 1234)
+SimpleSockets.addPacketToQueue("bool", False, 5)
+SimpleSockets.addPacketToQueue("str", "Hello! This packet was queued!", 16)
+SimpleSockets.sendQueuedPackets(connection)
+```
+
 There are built in packet types for integers, booleans, and strings. An incoming packet looks like this: ``(3, 'int', b'1234')``.  
 - The first item in the tuple is the channel number.
 - The second item in the tuple is the data type (can be 'int', 'bool', or 'string')

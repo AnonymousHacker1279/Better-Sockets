@@ -1,6 +1,8 @@
+import io
 import socket
 import threading
 import Logger
+import time
 
 # Define Variables
 connections = []
@@ -123,23 +125,29 @@ def disconnectClient(connection):
 		Logger.log("Failed to disconnect client: " + str(Error))
 
 # Add a packet to the queue.
-def addPacketToQueue(data):
+def addPacketToQueue(type: str, data, channel = 0):
 	global packetQueue
 	try:
 		Logger.log("Adding new packet to queue.")
 		length, encodedData = getBuffer(data)
-		packetQueue.append((length, encodedData))
+		packetQueue.append((length, channel, type, encodedData))
 	except Exception as Error:
 		Logger.logError("Failed to add new packet to queue. " + str(Error))
 
 # Send queued packets.
-def sendQueuedPackets():
+def sendQueuedPackets(server):
 	global packetQueue
-	for object in packetQueue:
-		length = packetQueue[object][0]
-		encodedData = packetQueue[object][1]
-		socketHandler.send(length)
-		socketHandler.send(encodedData)
+	iteration = 0
+	Logger.log("Sending queued packets...")
+	for _ in packetQueue:
+		length = packetQueue[iteration][0]
+		encodedData = packetQueue[iteration][3]
+		Logger.log("Sending queued packet with type of '" + packetQueue[iteration][2] + "'")
+		server.send(length)
+		server.send(bytearray(str((packetQueue[iteration][1], packetQueue[iteration][2], encodedData)), getEncoding()))
+		iteration = iteration + 1
+		# Add a slight delay so the packets arrive in order
+		time.sleep(0.0000000000000000000000001)
 
 # Send a packet to the destination server containing an integer.
 def sendPacketInt(server, data: int, channel = 0):

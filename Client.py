@@ -28,21 +28,29 @@ def handleData(data):
 # SimpleSockets.handleReceivedData = handleData
 
 # Send packets with varying data types
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
 SimpleSockets.sendPacketInt(connection, 9999)
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
 SimpleSockets.sendPacketBool(connection, True)
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
 SimpleSockets.sendPacketStr(connection, "Hello World!")
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
+
+# Add packets to a queue
+SimpleSockets.addPacketToQueue("int", 1234)
+SimpleSockets.addPacketToQueue("bool", False, 5)
+SimpleSockets.addPacketToQueue("str", "Hello! This packet was queued!", 16)
 
 # Send some packets on different channels
 SimpleSockets.sendPacketInt(connection, 1234, 3)
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
 SimpleSockets.sendPacketBool(connection, False, 15)
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
 SimpleSockets.sendPacketStr(connection, "Hello World! I'm on channel 32!", 32)
-time.sleep(0.1)
+time.sleep(0.0000000000000000000000001)
+
+# Use the packet queue system
+SimpleSockets.sendQueuedPackets(connection)
 
 # Disconnect the client
 time.sleep(0.1)
