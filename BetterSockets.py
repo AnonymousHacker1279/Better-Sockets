@@ -10,7 +10,7 @@ hostPort = None
 packetEncoding = "UTF-8"
 socketHandler = None
 packetQueue = []
-clientConnection = None
+stopHandlingClient = None
 
 # Initialize the software with host information. For sending as a client.
 def initializeClient(port: int):
@@ -23,10 +23,16 @@ def setDestination(addr):
 	global destinationAddress
 	destinationAddress = addr
 
+# Set the packet encoding. Defaults to UTF-8.
 def setEncoding(encoding: str):
 	global packetEncoding
 	packetEncoding = encoding
 
+# Get the packet encoding.
+def getEncoding():
+	return packetEncoding
+
+# Set the logger state. Defaults to disabled.
 def setLoggerState(state: bool):
 	Logger.state = state
 
@@ -41,15 +47,16 @@ def startSocket():
 	except Exception as Error:
 		Logger.logError("An exception occurred while starting the socket: " + str(Error))
 
+# Start an incoming connection. This MUST be threaded!
 def startIncomingConnection():
 	try:
 		global socketHandler
 		global connections
-		global clientConnection
+		global stopHandlingClient
+		stopHandlingClient = False
 		socketHandler.listen()
 		conn,addr = socketHandler.accept()
 		connection = conn,addr
-		clientConnection = conn
 		connections.append(addr[0])
 		threading.Thread(target=handleClient, args=(conn,)).start()
 		Logger.log("New connection from: " + str({connection}))
@@ -57,14 +64,17 @@ def startIncomingConnection():
 	except Exception as Error:
 		Logger.logError("Error occurred while starting the connection handler: " + str(Error))
 
+# Handle a connecting client. Returns the socket handler.
 def connectClient(addr):
 	socketHandler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	socketHandler.connect(addr)
 	return socketHandler
 
+# Thread an incoming connection.
 def threadIncomingConnection():
 	threading.Thread(target=startIncomingConnection).start()
 
+# Get buffer information from data.
 def getBuffer(data):
 	global packetEncoding
 	encodedMessage = str(data).encode(packetEncoding)
@@ -74,6 +84,7 @@ def getBuffer(data):
 	data = (sendLength, encodedMessage)
 	return data
 
+# Check if a client is connected.
 def checkConnected():
 	global destinationAddress
 	global connections
@@ -82,23 +93,34 @@ def checkConnected():
 	else:
 		return False
 
+# Handle a client connection.
 def handleClient(Connection):
-	while True:
+	while stopHandlingClient == False:
 		global packetEncoding
 		bufferLen = len(Connection.recv(64).decode(packetEncoding))
 		if bufferLen:
 			data = Connection.recv(int(bufferLen))
 			# Convert received string back to a tuple
 			convertedData = eval(data)
-			Logger.logDebug("Received data on channel " + str(convertedData[0]) + " (type " + str(convertedData[1]) + "): " + str(convertedData[2].decode(packetEncoding)))
+			handleReceivedData(convertedData)
 
+# Handle received data. Should be "monkey patched" to implement your own behavior with received data.
+def handleReceivedData(data):
+	Logger.logDebug("Received data on channel " + str(data[0]) + " (type " + str(data[1]) + "): " + str(data[2].decode(packetEncoding)))
+
+# Disconnect a client.
 def disconnectClient(connection):
+	global connections
+	global stopHandlingClient
 	try:
 		Logger.log("Disconnecting client...")
 		connection.close()
+		connections.remove(hostIP)
+		stopHandlingClient = True
 	except Exception as Error:
 		Logger.log("Failed to disconnect client: " + str(Error))
 
+# Add a packet to the queue.
 def addPacketToQueue(data):
 	global packetQueue
 	try:
@@ -108,6 +130,7 @@ def addPacketToQueue(data):
 	except Exception as Error:
 		Logger.logError("Failed to add new packet to queue. " + str(Error))
 
+# Send queued packets.
 def sendQueuedPackets():
 	global packetQueue
 	for object in packetQueue:
@@ -120,7 +143,6 @@ def sendQueuedPackets():
 def sendPacketInt(server, data: int, channel = 0):
 	global socketHandler
 	global destinationAddress
-	global clientConnection
 
 	try:
 		Logger.log("Sending packet with a data type of integer...")
@@ -132,7 +154,7 @@ def sendPacketInt(server, data: int, channel = 0):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str((channel, "int", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "int", encodedData)), getEncoding()))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of integer). " + str(Error))
 
@@ -140,7 +162,6 @@ def sendPacketInt(server, data: int, channel = 0):
 def sendPacketBool(server, data: bool, channel = 0):
 	global socketHandler
 	global destinationAddress
-	global clientConnection
 
 	try:
 		Logger.log("Sending packet with a data type of boolean...")
@@ -152,7 +173,7 @@ def sendPacketBool(server, data: bool, channel = 0):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str((channel, "bool", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "bool", encodedData)), getEncoding()))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of boolean). " + str(Error))
 
@@ -160,7 +181,6 @@ def sendPacketBool(server, data: bool, channel = 0):
 def sendPacketStr(server, data: str, channel = 0):
 	global socketHandler
 	global destinationAddress
-	global clientConnection
 
 	try:
 		Logger.log("Sending packet with a data type of string...")
@@ -172,6 +192,6 @@ def sendPacketStr(server, data: str, channel = 0):
 			raise ValueError
 		length, encodedData = getBuffer(data)
 		server.send(length)
-		server.send(bytearray(str((channel, "str", encodedData)), 'utf-8'))
+		server.send(bytearray(str((channel, "str", encodedData)), getEncoding()))
 	except Exception as Error:
 		Logger.logError("Sending packet failed (data type of string). " + str(Error))

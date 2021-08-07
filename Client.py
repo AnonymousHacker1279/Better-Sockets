@@ -1,7 +1,6 @@
-import socket
 import BetterSockets
-import threading
 import time
+import Logger
 
 # Set the logger state: Defaults to disabled.
 BetterSockets.setLoggerState(True)
@@ -18,6 +17,13 @@ BetterSockets.threadIncomingConnection()
 
 # Connect to the destination address, and save our connection information
 connection = BetterSockets.connectClient(ADDR)
+
+# Implement our own behavior for receiving data
+# Also known as "monkey patching"
+def handleData(data):
+	Logger.log("Received data on channel " + str(data[0]) + " (type " + str(data[1]) + "): " + str(data[2].decode(BetterSockets.getEncoding())))
+
+# BetterSockets.handleReceivedData = handleData
 
 # Send packets with varying data types
 time.sleep(0.1)
