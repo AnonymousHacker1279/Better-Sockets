@@ -67,7 +67,11 @@ def startIncomingConnection():
 # Handle a connecting client. Returns the socket handler.
 def connectClient(addr):
 	socketHandler = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	socketHandler.connect(addr)
+	try:
+		Logger.log("Client connecting...")
+		socketHandler.connect(addr)
+	except Exception as Error:
+		Logger.logError("Error occurred while connecting a client: " + str(Error))
 	return socketHandler
 
 # Thread an incoming connection.
@@ -99,10 +103,7 @@ def handleClient(Connection):
 		global packetEncoding
 		bufferLen = len(Connection.recv(64).decode(packetEncoding))
 		if bufferLen:
-			data = Connection.recv(int(bufferLen))
-			# Convert received string back to a tuple
-			convertedData = eval(data)
-			handleReceivedData(convertedData)
+			handleReceivedData(eval(Connection.recv(int(bufferLen))))
 
 # Handle received data. Should be "monkey patched" to implement your own behavior with received data.
 def handleReceivedData(data):
@@ -115,7 +116,8 @@ def disconnectClient(connection):
 	try:
 		Logger.log("Disconnecting client...")
 		connection.close()
-		connections.remove(hostIP)
+		if destinationAddress[0] in connections:
+			connections.remove(hostIP)
 		stopHandlingClient = True
 	except Exception as Error:
 		Logger.log("Failed to disconnect client: " + str(Error))
@@ -151,7 +153,7 @@ def sendPacketInt(server, data: int, channel = 0):
 			raise ValueError
 		if not checkConnected():
 			Logger.logError("Not connected to a socket.")
-			raise ValueError
+			raise ConnectionError
 		length, encodedData = getBuffer(data)
 		server.send(length)
 		server.send(bytearray(str((channel, "int", encodedData)), getEncoding()))
@@ -170,7 +172,7 @@ def sendPacketBool(server, data: bool, channel = 0):
 			raise ValueError
 		if not checkConnected():
 			Logger.logError("Not connected to a socket.")
-			raise ValueError
+			raise ConnectionError
 		length, encodedData = getBuffer(data)
 		server.send(length)
 		server.send(bytearray(str((channel, "bool", encodedData)), getEncoding()))
@@ -189,7 +191,7 @@ def sendPacketStr(server, data: str, channel = 0):
 			raise ValueError
 		if not checkConnected():
 			Logger.logError("Not connected to a socket.")
-			raise ValueError
+			raise ConnectionError
 		length, encodedData = getBuffer(data)
 		server.send(length)
 		server.send(bytearray(str((channel, "str", encodedData)), getEncoding()))

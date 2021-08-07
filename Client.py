@@ -6,10 +6,10 @@ import Logger
 BetterSockets.setLoggerState(True)
 
 # Initialize the client by specifying the port packets will be sent from.
-BetterSockets.initializeClient(443)
+BetterSockets.initializeClient(1234)
 
 # Set the destination address.
-ADDR = ("192.168.1.9", 443)
+ADDR = ("192.168.1.9", 1234)
 BetterSockets.setDestination(ADDR)
 
 # Start an incoming connection: This MUST be threaded!
@@ -21,7 +21,9 @@ connection = BetterSockets.connectClient(ADDR)
 # Implement our own behavior for receiving data
 # Also known as "monkey patching"
 def handleData(data):
-	Logger.log("Received data on channel " + str(data[0]) + " (type " + str(data[1]) + "): " + str(data[2].decode(BetterSockets.getEncoding())))
+	# Only log items on channel 3
+	if data[0] == 3:
+		Logger.log("Received data (type " + str(data[1]) + "): " + str(data[2].decode(BetterSockets.getEncoding())))
 
 # BetterSockets.handleReceivedData = handleData
 
